@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Column from './Column';
 import NewItemForm from './NewItemForm';
+import TaskFilters from './TaskFilters';
 import { Board as BoardType, Column as ColumnType, Task as TaskType } from '@/lib/types';
 import { generateId } from '@/lib/data';
 import { toast } from '@/components/ui/use-toast';
@@ -15,6 +16,7 @@ const Board: React.FC<BoardProps> = ({ initialBoard }) => {
   const [draggingColumnId, setDraggingColumnId] = useState<string | null>(null);
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [draggingOverColumnId, setDraggingOverColumnId] = useState<string | null>(null);
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
 
   // Persist board state to localStorage
   useEffect(() => {
@@ -164,6 +166,7 @@ const Board: React.FC<BoardProps> = ({ initialBoard }) => {
       toast({
         title: 'Task moved',
         description: `Task moved to "${board.columns.find(col => col.id === targetColumnId)?.title}".`,
+        variant: 'default',
       });
     }
     
@@ -194,18 +197,37 @@ const Board: React.FC<BoardProps> = ({ initialBoard }) => {
     }
   };
 
+  // Filter columns based on priority filter
+  const filteredColumns = board.columns.map(column => {
+    if (priorityFilter === 'all') {
+      return column;
+    }
+    
+    // Filter tasks based on priority
+    return {
+      ...column,
+      tasks: column.tasks.filter(task => task.priority === priorityFilter)
+    };
+  });
+
   return (
     <div className="p-6">
       <div className="mb-6">
-        <NewItemForm
-          onAdd={handleAddColumn}
-          placeholder="Add a new column..."
-          buttonText="Add Column"
-        />
+        <div className="flex flex-col md:flex-row md:justify-between gap-4 mb-4">
+          <NewItemForm
+            onAdd={handleAddColumn}
+            placeholder="Add a new column..."
+            buttonText="Add Column"
+          />
+          <TaskFilters 
+            onFilterChange={setPriorityFilter} 
+            currentFilter={priorityFilter} 
+          />
+        </div>
       </div>
       
       <div className="flex gap-4 overflow-x-auto pb-4 pt-2">
-        {board.columns.map((column) => (
+        {filteredColumns.map((column) => (
           <Column
             key={column.id}
             column={column}
